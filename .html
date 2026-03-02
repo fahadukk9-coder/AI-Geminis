@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Picks</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Segoe UI;
+    background:#f3f4f6;
+}
+
+/* Top Bar */
+.topbar{
+    background:#111827;
+    color:white;
+    padding:10px 15px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.menu-icon{
+    font-size:24px;
+    cursor:pointer;
+}
+
+.search-box{
+    display:flex;
+    gap:5px;
+}
+
+.search-box input{
+    padding:6px;
+    border-radius:5px;
+    border:none;
+    width:130px;
+}
+
+.search-box button{
+    padding:6px 10px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+/* Side Menu */
+.side-menu{
+    position:fixed;
+    top:0;
+    left:-220px;
+    width:200px;
+    height:100%;
+    background:#1f2937;
+    padding:20px;
+    transition:0.3s;
+}
+
+.side-menu button{
+    width:100%;
+    margin:10px 0;
+    padding:10px;
+    background:#374151;
+    color:white;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.main{
+    padding:20px;
+}
+
+.header{
+    font-size:26px;
+    font-weight:bold;
+    margin-bottom:15px;
+}
+
+/* Boxes */
+.box{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:15px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+input, textarea{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border-radius:6px;
+    border:1px solid #ccc;
+}
+
+button.primary{
+    background:#2563eb;
+    color:white;
+    border:none;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button.danger{
+    background:red;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+/* Card */
+.card{
+    background:white;
+    padding:15px;
+    margin-bottom:20px;
+    border-radius:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+.card img, .card video{
+    width:100%;
+    border-radius:8px;
+}
+
+.desc{
+    background:#f9fafb;
+    padding:10px;
+    margin-top:10px;
+    border-radius:6px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+    <div class="menu-icon" onclick="toggleMenu()">☰</div>
+    <div class="search-box">
+        <input type="number" id="findInput" placeholder="Find Post No">
+        <button onclick="findPost()">Find</button>
+    </div>
+</div>
+
+<!-- Side Menu -->
+<div id="sideMenu" class="side-menu">
+    <button onclick="showImages()">🖼 Images</button>
+    <button onclick="showVideos()">🎥 Videos</button>
+    <button onclick="toggleLogin()">Login</button>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<div class="main">
+
+<div class="header" id="sectionTitle">Images Gallery</div>
+
+<!-- Login -->
+<div id="loginBox" class="box" style="display:none;">
+    <input type="email" id="email" placeholder="Enter Email">
+    <input type="password" id="password" placeholder="Enter Password">
+    <button class="primary" onclick="login()">Login</button>
+</div>
+
+<!-- Upload -->
+<div id="uploadSection" class="box" style="display:none;">
+    <h3 id="uploadTitle">Upload Image</h3>
+    <input type="file" id="fileInput">
+    <textarea id="descInput" placeholder="Write Description (Optional)"></textarea>
+    <button class="primary" onclick="upload()">Upload</button>
+</div>
+
+<div id="gallery"></div>
+
+</div>
+
+<script>
+
+let isAdmin=false;
+let currentSection="image";
+
+const adminEmail="fahadukk9@gmail.com";
+const adminPass="admin78610";
+
+/* Toggle Menu */
+function toggleMenu(){
+    let menu=document.getElementById("sideMenu");
+    menu.style.left = menu.style.left==="0px" ? "-220px" : "0px";
+}
+
+/* Section Switch */
+function showImages(){
+    currentSection="image";
+    document.getElementById("sectionTitle").innerText="Images Gallery";
+    document.getElementById("uploadTitle").innerText="Upload Image";
+    document.getElementById("fileInput").accept="image/*";
+    loadGallery();
+}
+
+function showVideos(){
+    currentSection="video";
+    document.getElementById("sectionTitle").innerText="Videos Gallery";
+    document.getElementById("uploadTitle").innerText="Upload Video";
+    document.getElementById("fileInput").accept="video/*";
+    loadGallery();
+}
+
+/* Login */
+function toggleLogin(){
+    let box=document.getElementById("loginBox");
+    box.style.display= box.style.display==="block"?"none":"block";
+}
+
+function login(){
+    let email=document.getElementById("email").value;
+    let pass=document.getElementById("password").value;
+
+    if(email===adminEmail && pass===adminPass){
+        isAdmin=true;
+        alert("Admin Login Success");
+        document.getElementById("uploadSection").style.display="block";
+        document.getElementById("loginBox").style.display="none";
+    }else{
+        alert("Invalid Login");
+    }
+}
+
+function logout(){
+    location.reload();
+}
+
+/* Upload */
+function upload(){
+    let file=document.getElementById("fileInput").files[0];
+    let desc=document.getElementById("descInput").value;
+
+    if(!file){
+        alert("Select file");
+        return;
+    }
+
+    if(currentSection==="video" && !isAdmin){
+        alert("Only Admin Can Upload Videos");
+        return;
+    }
+
+    let reader=new FileReader();
+    reader.onload=function(e){
+        let data=JSON.parse(localStorage.getItem("mediaData")||"[]");
+
+        data.push({
+            type:currentSection,
+            src:e.target.result,
+            desc:desc
+        });
+
+        localStorage.setItem("mediaData",JSON.stringify(data));
+        loadGallery();
+    }
+
+    reader.readAsDataURL(file);
+}
+
+/* Load Gallery with Proper Numbering */
+function loadGallery(){
+    let gallery=document.getElementById("gallery");
+    gallery.innerHTML="";
+    let data=JSON.parse(localStorage.getItem("mediaData")||"[]");
+
+    let count=0;
+
+    data.forEach((item,index)=>{
+
+        if(item.type!==currentSection) return;
+
+        count++;
+
+        let card=document.createElement("div");
+        card.className="card";
+
+        let postNo=document.createElement("div");
+        postNo.innerHTML="<b>Post No: "+count+"</b>";
+        card.appendChild(postNo);
+
+        if(item.type==="image"){
+            let img=document.createElement("img");
+            img.src=item.src;
+            card.appendChild(img);
+        }else{
+            let video=document.createElement("video");
+            video.src=item.src;
+            video.controls=true;
+            card.appendChild(video);
+        }
+
+        if(item.desc){
+            let desc=document.createElement("div");
+            desc.className="desc";
+            desc.innerText=item.desc;
+            card.appendChild(desc);
+        }
+
+        if(isAdmin){
+            let del=document.createElement("button");
+            del.className="danger";
+            del.innerText="Delete";
+            del.onclick=function(){
+                data.splice(index,1);
+                localStorage.setItem("mediaData",JSON.stringify(data));
+                loadGallery();
+            }
+            card.appendChild(del);
+        }
+
+        gallery.appendChild(card);
+    });
+}
+
+/* Find Post by Number */
+function findPost(){
+    let number=parseInt(document.getElementById("findInput").value);
+    let data=JSON.parse(localStorage.getItem("mediaData")||"[]");
+    let gallery=document.getElementById("gallery");
+    gallery.innerHTML="";
+
+    let count=0;
+    let found=null;
+
+    data.forEach(item=>{
+        if(item.type===currentSection){
+            count++;
+            if(count===number){
+                found=item;
+            }
+        }
+    });
+
+    if(found){
+        let card=document.createElement("div");
+        card.className="card";
+
+        let postNo=document.createElement("div");
+        postNo.innerHTML="<b>Post No: "+number+"</b>";
+        card.appendChild(postNo);
+
+        if(found.type==="image"){
+            let img=document.createElement("img");
+            img.src=found.src;
+            card.appendChild(img);
+        }else{
+            let video=document.createElement("video");
+            video.src=found.src;
+            video.controls=true;
+            card.appendChild(video);
+        }
+
+        if(found.desc){
+            let desc=document.createElement("div");
+            desc.className="desc";
+            desc.innerText=found.desc;
+            card.appendChild(desc);
+        }
+
+        gallery.appendChild(card);
+    }else{
+        gallery.innerHTML="<h3>Post Not Found</h3>";
+    }
+}
+
+showImages();
+
+</script>
+
+</body>
+</html>
