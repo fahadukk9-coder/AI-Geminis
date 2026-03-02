@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Picks</title>
+<title>AI Gemini</title>
 
 <style>
 body{
@@ -17,6 +17,11 @@ body{
     background:#111827;
     color:white;
     padding:10px 15px;
+    display:flex;
+    flex-direction:column;
+}
+
+.topbar-main{
     display:flex;
     justify-content:space-between;
     align-items:center;
@@ -46,6 +51,17 @@ body{
     border:none;
     border-radius:5px;
     cursor:pointer;
+}
+
+/* Notice */
+#noticeLine{
+    background:#fde047;
+    color:#111827;
+    padding:5px 10px;
+    overflow:hidden;
+    white-space:nowrap;
+    font-weight:bold;
+    display:none;
 }
 
 /* Side Menu */
@@ -80,6 +96,7 @@ body{
     font-size:26px;
     font-weight:bold;
     margin-bottom:15px;
+    text-align:center;
 }
 
 /* Boxes */
@@ -144,11 +161,15 @@ button.danger{
 
 <!-- Top Bar -->
 <div class="topbar">
-    <div class="menu-icon" onclick="toggleMenu()">☰</div>
-    <div class="search-box">
-        <input type="number" id="findInput" placeholder="Find Post No">
-        <button onclick="findPost()">Find</button>
+    <div id="noticeLine"></div>
+    <div class="topbar-main">
+        <div class="menu-icon" onclick="toggleMenu()">☰</div>
+        <div class="search-box">
+            <input type="number" id="findInput" placeholder="Find Post No">
+            <button onclick="findPost()">Find</button>
+        </div>
     </div>
+    <div class="header" id="sectionTitle">AI Gemini</div>
 </div>
 
 <!-- Side Menu -->
@@ -157,11 +178,10 @@ button.danger{
     <button onclick="showVideos()">🎥 Videos</button>
     <button onclick="toggleLogin()">Login</button>
     <button onclick="logout()">Logout</button>
+    <button id="noticeBtn" style="display:none;" onclick="toggleNotice()">Notice</button>
 </div>
 
 <div class="main">
-
-<div class="header" id="sectionTitle">Images Gallery</div>
 
 <!-- Login -->
 <div id="loginBox" class="box" style="display:none;">
@@ -178,8 +198,14 @@ button.danger{
     <button class="primary" onclick="upload()">Upload</button>
 </div>
 
-<div id="gallery"></div>
+<!-- Notice Input -->
+<div id="noticeSection" class="box" style="display:none;">
+    <textarea id="noticeInput" placeholder="Write notice here"></textarea>
+    <label><input type="checkbox" id="noticeToggle"> Show Notice</label>
+    <button class="primary" onclick="saveNotice()">Save Notice</button>
+</div>
 
+<div id="gallery"></div>
 </div>
 
 <script>
@@ -194,33 +220,28 @@ function toggleMenu(){
     menu.style.left = menu.style.left==="0px" ? "-220px" : "0px";
 }
 
-/* Close Menu if open */
 function closeMenu(){
     let menu=document.getElementById("sideMenu");
-    if(menu.style.left==="0px"){
-        menu.style.left="-220px";
-    }
+    if(menu.style.left==="0px") menu.style.left="-220px";
 }
 
 /* Section Switch */
 function showImages(){
     currentSection="image";
-    document.getElementById("sectionTitle").innerText="Images Gallery";
     document.getElementById("uploadTitle").innerText="Upload Image";
-    document.getElementById("fileInput").accept="image/*";
     loadGallery();
     closeMenu();
     hideLogin();
+    hideNoticeSection();
 }
 
 function showVideos(){
     currentSection="video";
-    document.getElementById("sectionTitle").innerText="Videos Gallery";
     document.getElementById("uploadTitle").innerText="Upload Video";
-    document.getElementById("fileInput").accept="video/*";
     loadGallery();
     closeMenu();
     hideLogin();
+    hideNoticeSection();
 }
 
 /* Login Toggle */
@@ -228,78 +249,61 @@ function toggleLogin(){
     let box=document.getElementById("loginBox");
     box.style.display= box.style.display==="block"?"none":"block";
     closeMenu();
+    hideNoticeSection();
 }
 
-/* Hide Login Box */
 function hideLogin(){
     document.getElementById("loginBox").style.display="none";
 }
 
-/* Login Function */
+/* Admin Login */
 function login(){
     let email=document.getElementById("email").value;
     let pass=document.getElementById("password").value;
-
     if(email===adminEmail && pass===adminPass){
         isAdmin=true;
         alert("Admin Login Success");
         document.getElementById("uploadSection").style.display="block";
+        document.getElementById("noticeBtn").style.display="block";
         hideLogin();
     }else{
         alert("Invalid Login");
     }
 }
 
-/* Logout Function */
+/* Logout */
 function logout(){
     location.reload();
 }
 
-/* Upload */
+/* Upload Media */
 function upload(){
     let file=document.getElementById("fileInput").files[0];
     let desc=document.getElementById("descInput").value;
-
-    if(!file){
-        alert("Select file");
-        return;
-    }
-
-    if(currentSection==="video" && !isAdmin){
-        alert("Only Admin Can Upload Videos");
-        return;
-    }
+    if(!file){ alert("Select file"); return; }
+    if(currentSection==="video" && !isAdmin){ alert("Only Admin Can Upload Videos"); return; }
 
     let reader=new FileReader();
     reader.onload=function(e){
         let data=JSON.parse(localStorage.getItem("mediaData")||"[]");
-
-        data.push({
-            type:currentSection,
-            src:e.target.result,
-            desc:desc
-        });
-
+        data.push({ type:currentSection, src:e.target.result, desc:desc });
         localStorage.setItem("mediaData",JSON.stringify(data));
         loadGallery();
         document.getElementById("fileInput").value="";
         document.getElementById("descInput").value="";
     }
-
     reader.readAsDataURL(file);
 }
 
-/* Load Gallery */
+/* Gallery */
 function loadGallery(){
     let gallery=document.getElementById("gallery");
     gallery.innerHTML="";
     let data=JSON.parse(localStorage.getItem("mediaData")||"[]");
-
     let count=0;
     data.forEach((item,index)=>{
         if(item.type!==currentSection) return;
         count++;
-
         let card=document.createElement("div");
         card.className="card";
 
@@ -341,25 +345,20 @@ function loadGallery(){
     });
 }
 
-/* Find Post by Number */
+/* Find Post */
 function findPost(){
     let number=parseInt(document.getElementById("findInput").value);
     let data=JSON.parse(localStorage.getItem("mediaData")||"[]");
     let gallery=document.getElementById("gallery");
     gallery.innerHTML="";
-
     let count=0;
     let found=null;
-
     data.forEach(item=>{
         if(item.type===currentSection){
             count++;
-            if(count===number){
-                found=item;
-            }
+            if(count===number){ found=item; }
         }
     });
-
     if(found){
         let card=document.createElement("div");
         card.className="card";
@@ -368,32 +367,48 @@ function findPost(){
         postNo.innerHTML="<b>Post No: "+number+"</b>";
         card.appendChild(postNo);
 
-        if(found.type==="image"){
-            let img=document.createElement("img");
-            img.src=found.src;
-            card.appendChild(img);
-        }else{
-            let video=document.createElement("video");
-            video.src=found.src;
-            video.controls=true;
-            card.appendChild(video);
-        }
-
-        if(found.desc){
-            let desc=document.createElement("div");
-            desc.className="desc";
-            desc.innerText=found.desc;
-            card.appendChild(desc);
-        }
+        if(found.type==="image"){ let img=document.createElement("img"); img.src=found.src; card.appendChild(img); }
+        else{ let video=document.createElement("video"); video.src=found.src; video.controls=true; card.appendChild(video); }
+        if(found.desc){ let desc=document.createElement("div"); desc.className="desc"; desc.innerText=found.desc; card.appendChild(desc); }
 
         gallery.appendChild(card);
+    }else{ gallery.innerHTML="<h3>Post Not Found</h3>"; }
+}
+
+/* Notice Feature */
+function toggleNotice(){
+    let sec=document.getElementById("noticeSection");
+    sec.style.display= sec.style.display==="block"?"none":"block";
+}
+
+function hideNoticeSection(){
+    document.getElementById("noticeSection").style.display="none";
+}
+
+function saveNotice(){
+    let noticeText=document.getElementById("noticeInput").value;
+    let noticeOn=document.getElementById("noticeToggle").checked;
+    localStorage.setItem("noticeText", noticeText);
+    localStorage.setItem("noticeOn", noticeOn);
+    displayNotice();
+    alert("Notice Saved!");
+}
+
+function displayNotice(){
+    let noticeLine=document.getElementById("noticeLine");
+    let text=localStorage.getItem("noticeText")||"";
+    let on=localStorage.getItem("noticeOn")==="true";
+    if(text && on){
+        noticeLine.style.display="block";
+        noticeLine.innerText=text;
     }else{
-        gallery.innerHTML="<h3>Post Not Found</h3>";
+        noticeLine.style.display="none";
     }
 }
 
 /* Initial Load */
 showImages();
+displayNotice();
 </script>
 
 </body>
