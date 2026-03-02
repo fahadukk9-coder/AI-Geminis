@@ -58,6 +58,7 @@ body{
     background:#1f2937;
     padding:20px;
     transition:0.3s;
+    z-index:1000;
 }
 
 .side-menu button{
@@ -182,10 +183,8 @@ button.danger{
 </div>
 
 <script>
-
 let isAdmin=false;
 let currentSection="image";
-
 const adminEmail="fahadukk9@gmail.com";
 const adminPass="admin78610";
 
@@ -195,6 +194,14 @@ function toggleMenu(){
     menu.style.left = menu.style.left==="0px" ? "-220px" : "0px";
 }
 
+/* Close Menu if open */
+function closeMenu(){
+    let menu=document.getElementById("sideMenu");
+    if(menu.style.left==="0px"){
+        menu.style.left="-220px";
+    }
+}
+
 /* Section Switch */
 function showImages(){
     currentSection="image";
@@ -202,6 +209,8 @@ function showImages(){
     document.getElementById("uploadTitle").innerText="Upload Image";
     document.getElementById("fileInput").accept="image/*";
     loadGallery();
+    closeMenu();
+    hideLogin();
 }
 
 function showVideos(){
@@ -210,14 +219,23 @@ function showVideos(){
     document.getElementById("uploadTitle").innerText="Upload Video";
     document.getElementById("fileInput").accept="video/*";
     loadGallery();
+    closeMenu();
+    hideLogin();
 }
 
-/* Login */
+/* Login Toggle */
 function toggleLogin(){
     let box=document.getElementById("loginBox");
     box.style.display= box.style.display==="block"?"none":"block";
+    closeMenu();
 }
 
+/* Hide Login Box */
+function hideLogin(){
+    document.getElementById("loginBox").style.display="none";
+}
+
+/* Login Function */
 function login(){
     let email=document.getElementById("email").value;
     let pass=document.getElementById("password").value;
@@ -226,12 +244,13 @@ function login(){
         isAdmin=true;
         alert("Admin Login Success");
         document.getElementById("uploadSection").style.display="block";
-        document.getElementById("loginBox").style.display="none";
+        hideLogin();
     }else{
         alert("Invalid Login");
     }
 }
 
+/* Logout Function */
 function logout(){
     location.reload();
 }
@@ -263,23 +282,22 @@ function upload(){
 
         localStorage.setItem("mediaData",JSON.stringify(data));
         loadGallery();
+        document.getElementById("fileInput").value="";
+        document.getElementById("descInput").value="";
     }
 
     reader.readAsDataURL(file);
 }
 
-/* Load Gallery with Proper Numbering */
+/* Load Gallery */
 function loadGallery(){
     let gallery=document.getElementById("gallery");
     gallery.innerHTML="";
     let data=JSON.parse(localStorage.getItem("mediaData")||"[]");
 
     let count=0;
-
     data.forEach((item,index)=>{
-
         if(item.type!==currentSection) return;
-
         count++;
 
         let card=document.createElement("div");
@@ -374,10 +392,9 @@ function findPost(){
     }
 }
 
+/* Initial Load */
 showImages();
-
 </script>
 
 </body>
-
 </html>
