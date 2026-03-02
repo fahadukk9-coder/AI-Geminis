@@ -377,8 +377,10 @@ function findPost(){
 
 /* Notice Feature */
 function toggleNotice(){
-    let sec=document.getElementById("noticeSection");
-    sec.style.display= sec.style.display==="block"?"none":"block";
+    let sec = document.getElementById("noticeSection");
+    sec.style.display = sec.style.display === "block" ? "none" : "block";
+
+    closeMenu(); // <- ye line add ki, jisse menu automatically close ho jaye
 }
 
 function hideNoticeSection(){
@@ -413,3 +415,4 @@ displayNotice();
 
 </body>
 </html>
+
